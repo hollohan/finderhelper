@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <title>Adding a Custom Overlay</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        height: 100%;
+      }
+    </style>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAGVOTpGuZLLLxPJy3dWUp-bpdt4OUka4g"></script>
+    <script>
+      // This example creates a custom overlay called USGSOverlay, containing
+      // a U.S. Geological Survey (USGS) image of the relevant area on the map.
+
+      // Set the custom overlay object's prototype to a new instance
+      // of OverlayView. In effect, this will subclass the overlay class therefore
+      // it's simpler to load the API synchronously, using
+      // google.maps.event.addDomListener().
+      // Note that we set the prototype to an instance, rather than the
+      // parent class itself, because we do not wish to modify the parent class.
+
+      var overlay;
+      USGSOverlay.prototype = new google.maps.OverlayView();
+      markers = {};
+      faded=false;
+      loaded=false;
+      var map;
+      var bounds;
+      var table_name = '16Shaffner1';
+      add_this_printer = 0; // holds key for printer to be added
+
+	
+      // Initialize the map and the custom overlay.
+
+      function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 8,
+          center: {lat: 62.323907, lng: -150.109291},
+          mapTypeId: 'roadmap',
+          disableDefaultUI: true
+
+        });
+
+		swx = 62.281819;
+		swy = -150.287132;
+		h = 5500/10000*3; //3300
+		w = 5500/10000; //5500
+        bounds = new google.maps.LatLngBounds(
+            new google.maps.LatLng(swx, swy),
+            new google.maps.LatLng(swx+w,swy+h)
+        );
+		
+        // The photograph is courtesy of the U.S. Geological Survey.
+        var srcImage = '{{ url_for('static', filename='16Shaffner1.jpg') }}';
+
+        // The custom USGSOverlay object contains the USGS image,
+        // the bounds of the image, and a reference to the map.
+        overlay = new USGSOverlay(bounds, srcImage, map);
+        load_markers(map);
+        
+        $('#addPointButton').click( function(){
+        	/*
+    		lat = drop_point['lat'];
+    		lon = drop_point['lon'];
+    		if (lat==='undefined' || lon==='undefined') {
+    			alert ('undefined');
+    			map_center = map.getCenter().toJSON();
+        		lat = map_center['lat'];
+        		lon = map_center['lng'];
+    		} */ // drop_point is o longer nec, with this commented
+    		lat = markers[-1].position.lat(); // reloading means that we can keep this at -1
+    		lon = markers[-1].position.lng();
+    		address = 'addMarker/' +lat+ '/' +lon+ '/' +table_name+ '/' +add_this_printer;
+    		$.getJSON(address, function(data) {
+    			$.each(data, function(key,val){
+    				if (key === 'status') {console.log(val)};
+    				$('#addPointButton').fadeOut(); // do this on getjson success, this way user can tell if somethings up
+    				$('#markRoomButton').fadeIn();
+    				$('#ipShow').fadeIn();
+    			});
+    		});
+   			markers[-1].setDraggable(false); // instead, reload
+   			// remove markers
+    		for (i in markers) {
+     			 markers[i].setMap(null);
+ 			}
+ 			//re-load all markers
+ 			load_markers(map)
+ 			//kill cancel button
+ 			$('#cancelAddButton').fadeOut();
+ 			// add helluva button
+ 			$('#mButt').fadeIn();
+ 			$('#changeMapButton').fadeIn();
+ 			
+ 			// mark printer at this point found=True
+ 			alert(add_this_printer)
+ 			address = 'edit/' +add_this_printer+ '/found/true';
+ 			$.getJSON(address, function(data) {
+ 				console.log('update found returned successfully')
+ 			});
+ 			
+        });
+        // adds marker to db
+        $('#addRpoint').click(function() {
+        	lat = markers[-1].position.lat(); // reloading means that we can keep this at -1
+    		lon = markers[-1].position.lng();
+    		address = 'addMarker/' +lat+ '/' +lon+ '/' +table_name;
+    		$.getJSON(address, function(data) {
+    			$.each(data, function(key,val){
+    				if (key === 'status') {console.log(val)};
+    				$('#addPointButton').fadeOut(); // do this on getjson success, this way user can tell if somethings up
+    				$('#markRoomButton').fadeIn();
+    				$('#addRpoint').fadeOut();
+    				//$('#ipShow').fadeIn();
+    			});
+    		});
+   			markers[-1].setDraggable(false); // instead, reload
+   			// remove markers
+    		for (i in markers) {
+     			 markers[i].setMap(null);
+ 			}
+ 			//re-load all markers
+ 			load_markers(map)
+ 			//kill cancel button
+ 			$('#cancelAddButton').fadeOut();
+ 			// add helluva button
+ 			$('#mButt').fadeIn();
+ 			$('#changeMapButton').fadeIn();
+        });
+        
+        $('#markRoomButton').click( function(){
+    		map_center = map.getCenter().toJSON();
+        	lat = map_center['lat'];
+        	lon = map_center['lng'];
+       		
+        	create_marker(-1, map, lat, lon, true);
+        	
+        	$('#markRoomButton').fadeOut();
+        	$('#mButt').fadeOut();
+        	$('#changeMapButton').fadeOut();
+        	//$('#cancelAddButton').fadeIn();
+        	$('#cancelRoomButton').fadeIn();
+        	$('#addRpoint').fadeIn();
+        });
+        
+        
+        $('#foundButton').click(function() {
+        	map_center = map.getCenter().toJSON();
+        	lat = map_center['lat'];
+        	lon = map_center['lng'];
+       		
+       		$('#cancelRoomButton').fadeOut();
+        	hideShow();
+        	toggle_ipLookup();
+        	create_marker(-1, map, lat, lon, true);
+        	$('#mButt').fadeOut();
+        	$('#markRoomButton').fadeOut();
+        	$('#changeMapButton').fadeOut();
+        	$('#cancelAddButton').fadeIn();
+        	$('#addPointButton').fadeIn();
+      	});
+		$('#cancelAddButton').click(function () {
+			$('cancelAddButton').fadeOut();
+			$('#addPointButton').fadeIn();
+			$('#ipShow').fadeIn();
+			$('#mButt').fadeIn();
+			$('#markRoomButton').fadeIn();
+			$('#changeMapButton').fadeIn();
+			$('#addPointButton').fadeOut();
+			toggle_ipLookup();
+			// remove markers
+    		for (i in markers) {
+     			 markers[i].setMap(null);
+ 			}
+			load_markers(map);
+		});
+		$('#cancelRoomButton').click(function () {
+			$('#cancelRoomButton').fadeOut();
+			$('#addRpoint').fadeOut();
+			$('#addPointButton').fadeIn();
+			//$('#ipShow').fadeIn();
+			$('#mButt').fadeIn();
+			$('#markRoomButton').fadeIn();
+			$('#changeMapButton').fadeIn();
+			$('#addPointButton').fadeOut();
+			toggle_ipLookup();
+			// remove markers
+    		for (i in markers) {
+     			 markers[i].setMap(null);
+ 			}
+			load_markers(map);
+		});
+		$('#changeMapButton').click(function() {
+			$('#changeMap').fadeIn();
+		});
+      	      
+      }
+      
+
+      /** @constructor */
+      function USGSOverlay(bounds, image, map) {
+
+        // Initialize all properties.
+        this.bounds_ = bounds;
+        this.image_ = image;
+        this.map_ = map;
+
+        // Define a property to hold the image's div. We'll
+        // actually create this div upon receipt of the onAdd()
+        // method so we'll leave it null for now.
+        this.div_ = null;
+
+        // Explicitly call setMap on this overlay.
+        this.setMap(map);
+      }
+
+      /**
+       * onAdd is called when the map's panes are ready and the overlay has been
+       * added to the map.
+       */
+      USGSOverlay.prototype.onAdd = function() {
+
+        var div = document.createElement('div');
+        div.style.borderStyle = 'none';
+        div.style.borderWidth = '0px';
+        div.style.position = 'absolute';
+
+        // Create the img element and attach it to the div.
+        var img = document.createElement('img');
+        img.src = this.image_;
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.position = 'absolute';
+        div.appendChild(img);
+
+        this.div_ = div;
+
+        // Add the element to the "overlayLayer" pane.
+        var panes = this.getPanes();
+        panes.overlayLayer.appendChild(div);
+      };
+
+      drop_point = {}
+      function create_marker(key, map, la, lo, drag) {
+      la = parseFloat(la)
+      lo = parseFloat(lo)
+      	markers[key] = new google.maps.Marker({
+          map: map,
+          draggable: drag,
+          animation: google.maps.Animation.DROP,
+          position: {lat: la, lng: lo}
+        });
+      	//markers[key].addListener('click', toggleBounce);
+      	markers[key].addListener('dragend', function(){
+      		lat = markers[key].position.lat();
+      		lon = markers[key].position.lng();
+      		drop_point['lat'] = lat;
+      		drop_point['lon'] = lon;
+      	});
+      	markers[key].setMap(map)
+      }
+      
+      function load_markers(map) {
+      	// clear all markers first
+      	for (i in markers) {
+     		 markers[i].setMap(null);
+ 		}
+      
+      	address = 'getAllMarkers/' + table_name;
+      	$.getJSON(address, function (data) {
+      		$.each(data, function (key,val) {
+      			console.log(val[0])
+      			console.log(val[1])
+      			create_marker(key, map, val[1], val[0], false) //not sure why lat,lon is reversed
+      		});
+      	});
+      }
+      
+      results = {}
+      function lookupIP () {
+      	$('#ipResults').html('');
+      	//results = {} # no need for this if updating same keys
+      	ip = $('#ipTextBox').val()
+      	address = 'lookupIP/' + ip
+      	$.getJSON(address, function (data) {
+      		$.each(data, function(key,val) {
+      			id = key;
+      			addy = val['addy'];
+      			path = val['path'];
+      			found = val['found'];
+      			loc = val['loc'];
+      			$('#ipResults').append('<p id="' +id+ '" onClick="show(this)">' + addy+ '</p>');
+      			results[id] = val;
+      		});
+      		//#ipResults
+      		console.log(Object.keys(data).length);
+      	});
+      }
+      
+
+	  function show(i) {
+	  	if (Number.isInteger(parseInt(i))) { id=i; }
+	  	else { id = i.id; }
+	  	addy = results[id]['addy'];
+	  	path = results[id]['path'];
+	  	found = results[id]['found'];
+	  	loc = results[id]['loc'];
+	  	add_this_printer = id /// so we know which printer to found=True
+	  	
+	  	$('#showArea').html('');
+	  	$('#showArea').append(
+	  		 '<p>' +id+ '</p>'
+	  		+'<p onclick="edit_field(\''+id+'\',\'addy\',\''+addy+'\')">' +addy+ '</p>'
+	  		+'<p onclick="edit_field(\''+id+'\',\'path\',\''+path+'\')">' +path+ '</p>'
+	  		+'<p>' +found+ '</p>'
+	  		+'<p onclick="edit_field(\''+id+'\',\'loc\',\''+loc+'\')">' +loc+ '</p>'
+	  	);
+	  	$('#ipShow').fadeIn();
+	  	$('#editField').fadeOut()
+	  }
+		
+	  current_printer = {}
+	  function edit_field(id, field, current_value) {
+	  	current_printer = {
+	  		id: id,
+	  		field: field
+	  	}
+	  	$('#editField').fadeIn();
+	  	$('#editTextBox').val(current_value)
+	  }
+	  function save_value() {
+	  	id = current_printer['id']
+		field = current_printer['field']
+		new_value = $('#editTextBox').val();
+		//alert(id)
+		//alert(field)
+		//alert(new_value)
+	  	address = 'edit/' +id+ '/' +field+ '/' +new_value;
+	  	$.getJSON(address, function (data) {
+	  		results[id][field] = new_value;
+	  		show(id);
+	  	});
+	  	
+	  	lookupIP();
+	  	show(id)
+	  	$('editField').fadeOut();
+	  	
+	  }
+
+      function toggle_ipLookup () {
+      	if (faded) {
+      		$('#ipLookup').fadeIn();
+      		$('#cancelAddButton').fadeIn();
+      		faded = false;
+      	}
+      	else {
+      		$('#ipLookup').fadeOut();
+      		$('#cancelAddButton').fadeOut();
+      		faded = true;
+      		$('#addRpoint').fadeOut();
+      	}
+      }
+      
+      function hideShow () {
+      	$('#ipShow').fadeOut()
+      }
+      function hideEdit() {
+      	if (loaded) {
+      		//lookupIP();
+      		show(current_printer['id']);
+ 		}
+      	$('#editField').fadeOut();
+      }
+      
+      function killAddPoint () {
+      	$('#addPointButton').fadeOut();
+      }
+
+      USGSOverlay.prototype.draw = function() {
+
+        // We use the south-west and north-east
+        // coordinates of the overlay to peg it to the correct position and size.
+        // To do this, we need to retrieve the projection from the overlay.
+        var overlayProjection = this.getProjection();
+
+        // Retrieve the south-west and north-east coordinates of this overlay
+        // in LatLngs and convert them to pixel coordinates.
+        // We'll use these coordinates to resize the div.
+        var sw = overlayProjection.fromLatLngToDivPixel(this.bounds_.getSouthWest());
+        var ne = overlayProjection.fromLatLngToDivPixel(this.bounds_.getNorthEast());
+
+        // Resize the image's div to fit the indicated dimensions.
+        var div = this.div_;
+        div.style.left = sw.x + 'px';
+        div.style.top = ne.y + 'px';
+        div.style.width = (ne.x - sw.x) + 'px';
+        div.style.height = (sw.y - ne.y) + 'px';
+      };
+
+      // The onRemove() method will be called automatically from the API if
+      // we ever set the overlay's map property to 'null'.
+      USGSOverlay.prototype.onRemove = function() {
+        this.div_.parentNode.removeChild(this.div_);
+        this.div_ = null;
+      };
+      
+      function toggleBounce() {
+        if (marker.getAnimation() !== null) {
+          marker.setAnimation(null);
+        } else {
+          marker.setAnimation(google.maps.Animation.BOUNCE);
+        }
+      }
+      google.maps.event.addDomListener(window, 'load', initMap);
+      
+      function load() {loaded=true}
+      
+      function load_maps() {
+      	address = 'getMaps';
+      	$.getJSON(address, function(data) {
+      		$.each(data, function(key, val) {
+      			$('#changeMap').append('<p onclick="setNewMap(this)" class="newMap">' +val+ '</p>');
+      		});
+      	});
+      }
+      function setNewMap (i) {
+	  	new_map = $(i).text();
+	  	overlay.setMap(null);
+	  	$('#changeMap').fadeOut();
+	  	var srcImage = '/static/' + new_map;
+	  	overlay = new USGSOverlay(bounds, srcImage, map);
+	  	
+	  	// change db table to query
+	  	table_name = new_map.slice(0, -4);
+	  	
+        load_markers(map);	
+	  }
+	  function killAddR() {
+	  	$('#addRpoint').fadeOut();
+	  }
+    </script>
+  </head>
+  <body style='color:white;font-family:sans-serif;' onload='hideShow();hideEdit();load();killAddPoint();load_maps();killAddR()'>
+    <div id="map"></div>
+    <button onclick='toggle_ipLookup()' style='position:fixed;z-index:100;top:0px;right:0px;font-size:150%;' id='mButt'>HelluvaButton</button>
+  	<button id='changeMapButton' style='position:fixed;top:0%;left:0%;font-size:150%;'>Change Map</button>
+  	<button id='addPointButton' style='position:fixed;left:0%;bottom:0%;z-index:110;font-size:150%;'>AddPoint</button><!--</https://developers.google.com/maps/documentation/javascript/examples/overlay-removebutton>-->
+  	<button id='addRpoint' style='position:fixed;left:0%;bottom:0%;z-index:110;font-size:150%;'>addRPoint</button>
+  	<button id='cancelAddButton' style='position:fixed;bottom:0%;right:0%;font-size:150%;'>Cancel</button>
+  	<button id='cancelRoomButton' style='position:fixed;bottom:0%;right:0%;font-size:150%;'>CancelR</button>
+  	<button id='markRoomButton' style='position:fixed;bottom:0%;right:0%;font-size:150%;'>markRoom</button>
+  	<div id='ipLookup' style='z-index:98;height:100%;width:100%;position:fixed;top:0px;left:0px;background-color:black'>
+  		
+  		<div id='ipLookup2' style='position:fixed;bottom:0%;'>
+  			<div id='ipResults'></div>
+  			<input id='ipTextBox' step='any' type='number' style='width:100%;margin:1%;font-size:150%;'></inupt>
+  			<button onclick='lookupIP()' style='width:100%;font-size:150%;'>Click</button>
+  		</div>
+  	</div>
+  	<div id='ipShow' style='z-index:104;height:100%;width:100%;position:fixed;top:0px;left:0px;background-color:black'>
+  		<div>
+  			<button style='position:fixed;top:0%;right:0%;font-size:150%;' id='showButton' onClick='hideShow()'>Back</button>
+  		</div>
+  		<div id='showArea'>
+  		</div>
+  		<button style='font-size:150%;' id='foundButton'>Found</button>
+  	</div>
+  	<div id='editField' style='z-index:105;height:100%;width:100%;position:fixed;top:0px;left:0px;background-color:black'>
+	  	<input style='font-size:150%' id='editTextBox' type='text'></input>
+	  	<button style='font-size:150%'  onclick='save_value()'>Save</button>
+	  	<button style='font-size:150%'  onclick='hideEdit()'>Cancel</button>
+  	</div>
+  	<div id='changeMap' style='overflow-y:auto;position:fixed;height:100%;width:100%;z-index:200;background-color:black;left:0%;top:0%;'>
+  	</div>
+  </body>
+</html>
+

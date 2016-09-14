@@ -1,0 +1,84 @@
+<html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+	<script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js"></script>
+	<script src={{url_for('static', filename='jquery.ui.touch-punch.min.js')}}></script>
+	<script>
+		api_key =  'AIzaSyAGVOTpGuZLLLxPJy3dWUp-bpdt4OUka4g';
+		function mmove(event) {
+			x = event.clientX
+			y = event.clientY
+			$('#headB').text(x + ',' + y)
+		}
+		function mclick(event) {
+			x = event.clientX
+			y = event.clientY
+			$('#headB').text(x + ',' + y)
+		}
+		$(function () {
+			$('#dropbox').droppable({
+				drop: function (even, ui) {
+					var pos =  $('.dragbox').offset();
+					x = pos.left
+					y = pos.top
+					alert(x + ', ' + y);
+				}
+			});
+		});
+		function bclick() {
+			$('body').append('<div class=\'dragbox\'></>');
+			$('.dragbox').draggable();
+			
+		}
+		faded = 0;
+		function clickeroo() {
+			if (faded) {
+				$('#ipLookup').show('fade');
+				faded = 0;
+			}
+			else {
+				$('#ipLookup').hide('fade');
+				faded = 1;
+			}
+		}
+	</script>
+	<style>
+		img { width: 500px; } 
+		.dragbox {
+			border: 1px solid black;
+			height: 50px;
+			width: 50px;
+			background-color: green;
+		}
+		body { position:relative; }
+		#ipLookup {
+			position: fixed;
+			left: 0px;
+			top: 0px;
+			height: 100%;
+			width: 100%;
+			background-color: grey;
+			z-index: 1;
+		}
+		#keroo {
+			position: fixed;
+			left: 75%;
+			z-index: 2;
+		}
+	</style>
+</head>
+
+<body>
+	<div>
+		<button id='keroo' onclick='clickeroo()'>switch</button>
+		<button onclick='bclick()'>BUTTON</button>
+		<h4 id='headB'>x,y</h4>
+		<img id="dropbox" onclick="mclick(event)" onmousemove="mmove(event)" src='{{ url_for('static', filename='file-page1.jpg') }}'>
+	</div>
+	<div id='ipLookup'>
+		<input type='text'></input><br />
+		<button>Search</button>
+	</div>
+</body>
+</html>
