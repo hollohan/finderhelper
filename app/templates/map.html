@@ -201,6 +201,19 @@
 		$('#changeMapButton').click(function() {
 			$('#changeMap').fadeIn();
 		});
+		$('#addIPbutton').click(function() {
+			var new_addy = $('#newAddy').val()
+			address = 'addIP/' + new_addy;
+			$.getJSON(address, function() {
+				console.log('addIP return success');
+			});
+			$('#ipShow').fadeOut();
+			killNewIP();
+		});
+		$('#cancelNewIP').click(function() {
+			$('#ipShow').fadeOut();
+			killNewIP();
+		});
       	      
       }
       
@@ -317,11 +330,11 @@
 	  	
 	  	$('#showArea').html('');
 	  	$('#showArea').append(
-	  		 '<p>' +id+ '</p>'
-	  		+'<p onclick="edit_field(\''+id+'\',\'addy\',\''+addy+'\')">' +addy+ '</p>'
-	  		+'<p onclick="edit_field(\''+id+'\',\'path\',\''+path+'\')">' +path+ '</p>'
-	  		+'<p>' +found+ '</p>'
-	  		+'<p onclick="edit_field(\''+id+'\',\'loc\',\''+loc+'\')">' +loc+ '</p>'
+	  		 'ID: <p>' +id+ '</p>'
+	  		+'IP: <p onclick="edit_field(\''+id+'\',\'addy\',\''+addy+'\')">' +addy+ '</p>'
+	  		+'PATH: <p onclick="edit_field(\''+id+'\',\'path\',\''+path+'\')">' +path+ '</p>'
+	  		+'found? <p>' +found+ '</p>'
+	  		+'LOC: <p onclick="edit_field(\''+id+'\',\'loc\',\''+loc+'\')">' +loc+ '</p>'
 	  	);
 	  	$('#ipShow').fadeIn();
 	  	$('#editField').fadeOut()
@@ -446,9 +459,11 @@
 	  function killAddR() {
 	  	$('#addRpoint').fadeOut();
 	  }
+	  function killNewIP() {$('#addToMaster').fadeOut()}
+	  function showNewIP() {$('#addToMaster').fadeIn()}
     </script>
   </head>
-  <body style='color:white;font-family:sans-serif;' onload='hideShow();hideEdit();load();killAddPoint();load_maps();killAddR()'>
+  <body style='color:white;font-family:sans-serif;' onload='hideShow();hideEdit();load();killAddPoint();load_maps();killAddR();killNewIP()'>
     <div id="map"></div>
     <button onclick='toggle_ipLookup()' style='position:fixed;z-index:100;top:0px;right:0px;font-size:150%;' id='mButt'>HelluvaButton</button>
   	<button id='changeMapButton' style='position:fixed;top:0%;left:0%;font-size:150%;'>Change Map</button>
@@ -479,6 +494,11 @@
 	  	<button style='font-size:150%'  onclick='hideEdit()'>Cancel</button>
   	</div>
   	<div id='changeMap' style='overflow-y:auto;position:fixed;height:100%;width:100%;z-index:200;background-color:black;left:0%;top:0%;'>
+  	</div>
+  	<div id='addToMaster' style='position:fixed;height:100%;width:100%;z-index:300;background-color:black;left:0%;top:0%;'> 
+  		<input id='newAddy' style='font-size:150%;' type='text'></input>
+  		<button id='addIPbutton' style='font-size:150%'>addIP</button>
+  		<button id='cancelNewIP'>cancel</button>
   	</div>
   </body>
 </html>

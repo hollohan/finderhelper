@@ -77,6 +77,9 @@ def lookupIP(ip):
 		loc = thing[4]
 		r[marker_id] = {'addy':addy, 'path':path, 'found':found, 'loc':loc}
 		
+	if len(r) == 0: # no results return button
+		r['noneFound'] = {'addy':'<button onclick="showNewIP()">add new IP</button>', 'path':'', 'found':'', 'loc':''}	
+		
 	return json.dumps(r)
 	
 @app.route('/edit/<int:i>/<string:field>/<string:new_value>')
@@ -107,6 +110,25 @@ def get_maps():
 	a = sorted(a)
 	
 	return json.dumps(a)
+	
+@app.route('/addIP/<addy>')
+def addIP(addy):
+	q_string = 'insert into printers (addy) values ("%s")' % (addy)
+	print q_string
+	conn = pymysql.connect(
+        host = 'localhost',
+        user = 'root',
+        password = 'toor',
+        db = 'finderhelper')        
+	cursor = conn.cursor()
+	cursor.execute(q_string)
+	
+	results = cursor.fetchall()
+	
+	conn.commit()
+	conn.close()
+	
+	return json.dumps({'status': 'OK'});
 	
 	
 	
