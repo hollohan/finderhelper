@@ -101,10 +101,10 @@
  			$('#changeMapButton').fadeIn();
  			
  			// mark printer at this point found=True
- 			alert(add_this_printer)
+ 			// alert(add_this_printer)
  			address = 'edit/' +add_this_printer+ '/found/true';
  			$.getJSON(address, function(data) {
- 				console.log('update found returned successfully')
+ 				//alert('')
  			});
  			
         });
@@ -214,6 +214,13 @@
 			$('#ipShow').fadeOut();
 			killNewIP();
 		});
+		$('#freshButton').click(function (){
+			// remove markers
+    		for (i in markers) {
+     			 markers[i].setMap(null);
+ 			}
+			load_markers(map);
+		});
       	      
       }
       
@@ -303,6 +310,7 @@
       	//results = {} # no need for this if updating same keys
       	ip = $('#ipTextBox').val()
       	address = 'lookupIP/' + ip
+      	newHTML = '';
       	$.getJSON(address, function (data) {
       		$.each(data, function(key,val) {
       			id = key;
@@ -310,11 +318,13 @@
       			path = val['path'];
       			found = val['found'];
       			loc = val['loc'];
-      			$('#ipResults').append('<p id="' +id+ '" onClick="show(this)">' + addy+ '</p>');
+      			//$('#ipResults').append('<p id="' +id+ '" onClick="show(this)">' + addy+ '</p>');
+      			newHTML += '<p id="' +id+ '" onClick="show(this)">' + addy+ '</p>';
       			results[id] = val;
       		});
       		//#ipResults
-      		console.log(Object.keys(data).length);
+      		$('#ipResults').html(newHTML);
+      		//console.log(Object.keys(data).length);
       	});
       }
       
@@ -328,13 +338,16 @@
 	  	loc = results[id]['loc'];
 	  	add_this_printer = id /// so we know which printer to found=True
 	  	
+	  	if (found) {found='<p style="color:green">ALREADY FOUND</p>'}
+	  	else {found='<p style="color:red">NOT FOUND</p>'}
+	  	
 	  	$('#showArea').html('');
 	  	$('#showArea').append(
-	  		 'ID: <p>' +id+ '</p>'
-	  		+'IP: <p onclick="edit_field(\''+id+'\',\'addy\',\''+addy+'\')">' +addy+ '</p>'
-	  		+'PATH: <p onclick="edit_field(\''+id+'\',\'path\',\''+path+'\')">' +path+ '</p>'
-	  		+'found? <p>' +found+ '</p>'
-	  		+'LOC: <p onclick="edit_field(\''+id+'\',\'loc\',\''+loc+'\')">' +loc+ '</p>'
+	  		 '<div style="font-size:100%;margin-bottom:2%;">ID: ' +id+ '</div>'
+	  		+'<div style="font-size:100%;margin-bottom:2%;" onclick="edit_field(\''+id+'\',\'addy\',\''+addy+'\')">IP: ' +addy+ '</div>'
+	  		+'<div style="font-size:100%;margin-bottom:2%;" onclick="edit_field(\''+id+'\',\'path\',\''+path+'\')">PATH: ' +path+ '</div>'
+	  		+'<div style="font-size:100%;margin-bottom:2%;" onclick="edit_field(\''+id+'\',\'loc\',\''+loc+'\')">LOC: ' +loc+ '</div>'
+	  		+'<div style="font-size:100%;margin-top:3%;">' +found+ '</div>'
 	  	);
 	  	$('#ipShow').fadeIn();
 	  	$('#editField').fadeOut()
@@ -466,39 +479,40 @@
   <body style='color:white;font-family:sans-serif;' onload='hideShow();hideEdit();load();killAddPoint();load_maps();killAddR();killNewIP()'>
     <div id="map"></div>
     <button onclick='toggle_ipLookup()' style='position:fixed;z-index:100;top:0px;right:0px;font-size:150%;' id='mButt'>HelluvaButton</button>
-  	<button id='changeMapButton' style='position:fixed;top:0%;left:0%;font-size:150%;'>Change Map</button>
+  	<button id='changeMapButton' style='position:fixed;top:0%;left:0%;font-size:150%;'>Maps</button>
+  	<button id='freshButton' style='font-size:150%;position:fixed;left0%;bottom:0%;'>fresh</button>
   	<button id='addPointButton' style='position:fixed;left:0%;bottom:0%;z-index:110;font-size:150%;'>AddPoint</button><!--</https://developers.google.com/maps/documentation/javascript/examples/overlay-removebutton>-->
   	<button id='addRpoint' style='position:fixed;left:0%;bottom:0%;z-index:110;font-size:150%;'>addRPoint</button>
   	<button id='cancelAddButton' style='position:fixed;bottom:0%;right:0%;font-size:150%;'>Cancel</button>
   	<button id='cancelRoomButton' style='position:fixed;bottom:0%;right:0%;font-size:150%;'>CancelR</button>
   	<button id='markRoomButton' style='position:fixed;bottom:0%;right:0%;font-size:150%;'>markRoom</button>
-  	<div id='ipLookup' style='z-index:98;height:100%;width:100%;position:fixed;top:0px;left:0px;background-color:black'>
+  	<div id='ipLookup' style='z-index:96;height:100%;width:100%;position:fixed;top:0px;left:0px;background-color:black'>
   		
-  		<div id='ipLookup2' style='position:fixed;bottom:0%;'>
-  			<div id='ipResults'></div>
-  			<input id='ipTextBox' step='any' type='number' style='width:100%;margin:1%;font-size:150%;'></inupt>
-  			<button onclick='lookupIP()' style='width:100%;font-size:150%;'>Click</button>
+  		<div id='ipLookup2' style='width:100%;position:fixed;bottom:0%;'>
+  			<div id='ipResults' style='padding-right:60%;padding-top:10%;position:fixed;height:70%;right:0%;top:0%;bottom:0%;overflow:auto;'></div>
+  			<input id='ipTextBox' placeholder='type IP here' step='any' type='number' style='z-index:98;width:100%;margin:1%;font-size:150%;'></inupt><br />
+  			<button onclick='lookupIP()' style='margin-top:5%;margin-bottom:10%;width:100%;font-size:150%;'>Search for IP</button>
   		</div>
   	</div>
   	<div id='ipShow' style='z-index:104;height:100%;width:100%;position:fixed;top:0px;left:0px;background-color:black'>
   		<div>
   			<button style='position:fixed;top:0%;right:0%;font-size:150%;' id='showButton' onClick='hideShow()'>Back</button>
   		</div>
-  		<div id='showArea'>
+  		<div style='padding:5%;padding-top:25%;padding-bottom:15%;' id='showArea'>
   		</div>
-  		<button style='font-size:150%;' id='foundButton'>Found</button>
+  		<button style='font-size:150%;width:100%;' id='foundButton'>Found</button>
   	</div>
-  	<div id='editField' style='z-index:105;height:100%;width:100%;position:fixed;top:0px;left:0px;background-color:black'>
-	  	<input style='font-size:150%' id='editTextBox' type='text'></input>
-	  	<button style='font-size:150%'  onclick='save_value()'>Save</button>
-	  	<button style='font-size:150%'  onclick='hideEdit()'>Cancel</button>
+  	<div id='editField' style='text-align:center;z-index:105;height:100%;width:100%;position:fixed;top:0px;left:0px;background-color:black'>
+	  	<input style='overflow-x:auto;font-size:150%;width:100%;margin-top:25%;margin-bottom:15%;' id='editTextBox' type='textarea'></input>
+	  	<button style='font-size:150%;width:30%;margin:2%;'  onclick='save_value()'>Save</button>
+	  	<button style='font-size:150%;width:30%;margin:2%;'  onclick='hideEdit()'>Cancel</button>
   	</div>
   	<div id='changeMap' style='overflow-y:auto;position:fixed;height:100%;width:100%;z-index:200;background-color:black;left:0%;top:0%;'>
   	</div>
-  	<div id='addToMaster' style='position:fixed;height:100%;width:100%;z-index:300;background-color:black;left:0%;top:0%;'> 
-  		<input id='newAddy' style='font-size:150%;' type='text'></input>
-  		<button id='addIPbutton' style='font-size:150%'>addIP</button>
-  		<button id='cancelNewIP'>cancel</button>
+  	<div id='addToMaster' style='text-align:center;position:fixed;height:100%;width:100%;z-index:300;background-color:black;left:0%;top:0%;'> 
+  		<input id='newAddy' style='font-size:150%;width:100%;margin-top:25%;margin-bottom:15%' type='text' placeholder='type new IP'></input>
+  		<button id='addIPbutton' style='width:30%;font-size:150%'>addIP</button>
+  		<button style='width:30%;font-size:150%' id='cancelNewIP'>cancel</button>
   	</div>
   </body>
 </html>

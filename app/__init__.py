@@ -78,7 +78,7 @@ def lookupIP(ip):
 		r[marker_id] = {'addy':addy, 'path':path, 'found':found, 'loc':loc}
 		
 	if len(r) == 0: # no results return button
-		r['noneFound'] = {'addy':'<button onclick="showNewIP()">add new IP</button>', 'path':'', 'found':'', 'loc':''}	
+		r['noneFound'] = {'addy':'<br /><br /><p>...ip not found...</p><button style="font-size:150%;position:fixed;top:30%;left:0%;width:100%;" onclick="showNewIP()">add IP to DB</button>', 'path':'', 'found':'', 'loc':''}	
 		
 	return json.dumps(r)
 	
@@ -127,7 +127,6 @@ def addIP(addy):
 	
 	conn.commit()
 	conn.close()
-	
 	return json.dumps({'status': 'OK'});
 	
 	
